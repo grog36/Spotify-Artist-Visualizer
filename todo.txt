@@ -1,0 +1,2 @@
+Create a program to make the .dot files
+Find a way to import song and artist names
