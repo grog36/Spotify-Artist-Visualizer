@@ -19,8 +19,11 @@
 #define FALSE 0
 
 /** CONSTANTS */
-#define MAX_ARTIST_COUNT 10
-#define MAX_LINK_COUNT 20
+#define MAX_ARTIST_COUNT 100
+#define MAX_ARTIST_PER_SONG 10
+#define MAX_LINK_COUNT 200
+#define MAX_LINK_PER_ARTIST 20
+#define MAX_SONG_COUNT 500
 
 
 /**

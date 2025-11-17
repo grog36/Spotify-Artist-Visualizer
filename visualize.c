@@ -9,131 +9,99 @@
 //Include necessary header file
 #include "./visualize.h"
 
+int get_artist_index(struct Artist** all_artists, int* total_artist_count, char* name) {
+    for (int i = 0; i < (*total_artist_count); i++) {
+        //TODO: Compare Names
+        if (strcmp(all_artists[i]->name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+struct Artist* create_artist(struct Artist** all_artists, int* total_artist_count, char* name) {
+    //Creates an artist and assigns values
+    struct Artist* new_artist = (struct Artist*) malloc(sizeof(struct Artist));
+    new_artist->name = name;
+    new_artist->id = (*total_artist_count);
+    new_artist->links = (struct Link**) calloc(MAX_LINK_PER_ARTIST, (sizeof(struct Link*)));
+    new_artist->link_count = 0;
+    
+    //Update global variables
+    all_artists[(*total_artist_count)] = new_artist;
+    (*total_artist_count) = (*total_artist_count) + 1;
+
+    //Return a pointer to the newly created artist
+    return new_artist;
+}
+
+struct Song* create_song(struct Artist** all_artists, int* total_song_count, struct Song** all_songs, char* name, int* artist_ids, int num_of_artists) {
+    //Creates the song and sets attributes
+    struct Song* new_song = (struct Song*) malloc(sizeof(struct Song));
+    new_song->song_name = name;
+    new_song->artist_count = num_of_artists;
+    new_song->artists = (struct Artist**) calloc(num_of_artists, sizeof(struct Artist*));
+    for (int i = 0; i < num_of_artists; i++) {
+        new_song->artists[i] = all_artists[artist_ids[i]];
+    }
+
+    //Update global variables
+    all_songs[(*total_song_count)] = new_song;
+    (*total_song_count) = (*total_song_count) + 1;
+
+    //Returns a pointer to the newly created song
+    return new_song;
+}
+
+void print_artist(struct Artist* artist) {
+    printf("Artist Name: '%s' {\n", artist->name);
+    printf("\tid: %d\n", artist->id);
+    printf("\tlink count: %d\n", artist->link_count);
+    printf("}\n");
+}
+
+void print_song(struct Song* song) {
+    printf("Song Name: '%s' {\n", song->song_name);
+    for (int i = 0; i < song->artist_count; i++) {
+        printf("\tArtist: '%s'\n", song->artists[i]->name);
+    }
+    printf("}\n");
+}
+
 int main(void) {
-
-    //Create songs
-    struct Song* ya_es_hora = (struct Song*) malloc(sizeof(struct Song));
-    ya_es_hora->song_name = "Ya Es Hora";
-    ya_es_hora->artist_count = 3;
-    ya_es_hora->artists = (struct Artist**) calloc((ya_es_hora->artist_count), sizeof(struct Artist*));
-
-    struct Song* muchacha = (struct Song*) malloc(sizeof(struct Song));
-    muchacha->song_name = "Muchacha";
-    muchacha->artist_count = 2;
-    muchacha->artists = (struct Artist**) calloc((muchacha->artist_count), sizeof(struct Artist*));
-
-    struct Song* momento = (struct Song*) malloc(sizeof(struct Song));
-    momento->song_name = "Momento";
-    momento->artist_count = 2;
-    momento->artists = (struct Artist**) calloc((momento->artist_count), sizeof(struct Artist*));
-
-    struct Song* mamiii = (struct Song*) malloc(sizeof(struct Song));
-    mamiii->song_name = "MAMIII";
-    mamiii->artist_count = 2;
-    mamiii->artists = (struct Artist**) calloc((mamiii->artist_count), sizeof(struct Artist*));
+    //Define global variables
+    struct Artist** all_artists = (struct Artist**) calloc(MAX_ARTIST_COUNT, sizeof(struct Artist*));
+    struct Link** all_links = (struct Link**) calloc(MAX_LINK_COUNT, sizeof(struct Link*));
+    struct Song** all_songs = (struct Song**) calloc(MAX_SONG_COUNT, sizeof(struct Song*));
+    int total_artist_count = 0;
+    int total_song_count = 0;
+    int total_link_count = 0;
+    int temp_artist_list[MAX_ARTIST_PER_SONG];
     
     //Create some artists
-    struct Artist** all_artists = (struct Artist**) calloc(MAX_ARTIST_COUNT, sizeof(struct Artist*));
-    int current_artist_index = 0;
+    create_artist(all_artists, &total_artist_count, "Becky G");
+    create_artist(all_artists, &total_artist_count, "Gente De Zona");
+    create_artist(all_artists, &total_artist_count, "Ana Mena");
+    create_artist(all_artists, &total_artist_count, "De La Ghetto");
 
-    struct Artist* becky_g = (struct Artist*) malloc(sizeof(struct Artist));
-    becky_g->name = "Becky G";
-    becky_g->link_count = 4;
-    becky_g->links = (struct Link**) calloc((becky_g->link_count), sizeof(struct Link*));
-    becky_g->id = current_artist_index;
-    all_artists[current_artist_index] = becky_g;
-    current_artist_index++;
-    
-    struct Artist* gente_de_zona = (struct Artist*) malloc(sizeof(struct Artist));
-    gente_de_zona->name = "Gente De Zona";
-    gente_de_zona->link_count = 2;
-    gente_de_zona->links = (struct Link**) calloc((gente_de_zona->link_count), sizeof(struct Link*));
-    gente_de_zona->id = current_artist_index;
-    all_artists[current_artist_index] = gente_de_zona;
-    current_artist_index++;
-
-    struct Artist* ana_mena = (struct Artist*) malloc(sizeof(struct Artist));
-    ana_mena->name = "Ana Mena";
-    ana_mena->link_count = 3;
-    ana_mena->links = (struct Link**) calloc((ana_mena->link_count), sizeof(struct Link*));
-    ana_mena->id = current_artist_index;
-    all_artists[current_artist_index] = ana_mena;
-    current_artist_index++;
-
-    struct Artist* de_la_ghetto = (struct Artist*) malloc(sizeof(struct Artist));
-    de_la_ghetto->name = "De La Ghetto";
-    de_la_ghetto->link_count = 2;
-    de_la_ghetto->links = (struct Link**) calloc((de_la_ghetto->link_count), sizeof(struct Link*));
-    de_la_ghetto->id = current_artist_index;
-    all_artists[current_artist_index] = de_la_ghetto;
-    current_artist_index++;
-
-    struct Artist* karol_g = (struct Artist*) malloc(sizeof(struct Artist));
-    karol_g->name = "Karol G";
-    karol_g->link_count = 1;
-    karol_g->links = (struct Link**) calloc((karol_g->link_count), sizeof(struct Link*));
-    karol_g->id = current_artist_index;
-    all_artists[current_artist_index] = karol_g;
-    current_artist_index++;
-
-
-    //Create Links
-    struct Link** all_links = (struct Link**) calloc(MAX_LINK_COUNT, sizeof(struct Link*));
-    int current_link_index = 0;
-    struct Link ab;
-    ab.artist_one = de_la_ghetto;
-    ab.artist_two = becky_g;
-    ab.song = ya_es_hora;
-    all_links[current_link_index] = &ab;
-    current_link_index++;
-
-    struct Link ac;
-    ac.artist_one = de_la_ghetto;
-    ac.artist_two = ana_mena;
-    ac.song = ya_es_hora;
-    all_links[current_link_index] = &ac;
-    current_link_index++;
-
-    struct Link bc;
-    bc.artist_one = becky_g;
-    bc.artist_two = ana_mena;
-    bc.song = ya_es_hora;
-    all_links[current_link_index] = &bc;
-    current_link_index++;
-
-    struct Link ce;
-    ce.artist_one = ana_mena;
-    ce.artist_two = gente_de_zona;
-    ce.song = momento;
-    all_links[current_link_index] = &ce;
-    current_link_index++;
-
-    struct Link be;
-    be.artist_one = becky_g;
-    be.artist_two = gente_de_zona;
-    be.song = muchacha;
-    all_links[current_link_index] = &be;
-    current_link_index++;
-
-    struct Link bd;
-    bd.artist_one = becky_g;
-    bd.artist_two = karol_g;
-    bd.song = mamiii;
-    all_links[current_link_index] = &bd;
-    current_link_index++;
-
+    //Create songs
+    temp_artist_list[0] = get_artist_index(all_artists, &total_artist_count, "Becky G");
+    temp_artist_list[1] = get_artist_index(all_artists, &total_artist_count, "Ana Mena");
+    temp_artist_list[2] = get_artist_index(all_artists, &total_artist_count, "De La Ghetto");
+    create_song(all_artists, &total_song_count, all_songs, "Ya Es Hora", temp_artist_list, 3);
 
     //File manip
     FILE* output_file = fopen("ArtistTree.dot", "w");
     fprintf(output_file, "graph ArtistTree{\n");
 
     //Nodes
-    for (int i = 0; i < current_artist_index; i++) {
+    for (int i = 0; i < total_artist_count; i++) {
         struct Artist* current_artist = all_artists[i];
         fprintf(output_file, "\t%d[label=\"%s\"];\n", current_artist->id, current_artist->name);
     }
     //Edges
-    for (int i = 0; i < current_link_index; i++) {
+    for (int i = 0; i < total_link_count; i++) {
         struct Link* current_link = all_links[i];
         int artist_one_id = current_link->artist_one->id;
         int artist_two_id = current_link->artist_two->id;
@@ -145,25 +113,21 @@ int main(void) {
     fclose(output_file);
 
     //Free all memory
-    free(karol_g->links);
-    free(karol_g);
-    free(de_la_ghetto->links);
-    free(de_la_ghetto);
-    free(ana_mena->links);
-    free(ana_mena);
-    free(gente_de_zona->links);
-    free(gente_de_zona);
-    free(becky_g->links);
-    free(becky_g);
-    free(mamiii->artists);
-    free(mamiii);
-    free(muchacha->artists);
-    free(muchacha);
-    free(momento->artists);
-    free(momento);
-    free(ya_es_hora->artists);
-    free(ya_es_hora);
+    for (int i = 0; i < total_link_count; i++) {
+        free(all_links[i]);
+    }
+    for (int i = 0; i < total_song_count; i++) {
+        free(all_songs[i]->artists);
+        free(all_songs[i]);
+    }
+    for (int i = 0; i < total_artist_count; i++) {
+        free(all_artists[i]->links);
+        free(all_artists[i]);
+    }
+    free(all_links);
+    free(all_songs);
+    free(all_artists);
 
 
-    printf("Hello there!\n");
+    printf("Visualization Complete!\n");
 }
