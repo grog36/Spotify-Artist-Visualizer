@@ -54,6 +54,24 @@ struct Song* create_song(struct Artist** all_artists, int* total_song_count, str
     return new_song;
 }
 
+struct Link* create_link(struct Artist** all_artists, int total_artist_count, struct Link** all_links, int* total_link_count, char* first_artist_name, char* second_artist_name, struct Song* song) {
+    //Creates the link and sets attributes
+    int first_artist_index = get_artist_index(all_artists, &total_artist_count, first_artist_name);
+    int second_artist_index = get_artist_index(all_artists, &total_artist_count, second_artist_name);
+    struct Link* new_link = (struct Link*) malloc(sizeof(struct Link));
+    new_link->artist_one = all_artists[first_artist_index];
+    new_link->artist_two = all_artists[second_artist_index];
+    new_link->song = song;
+
+    //Update global variables
+    all_links[(*total_link_count)] = new_link;
+    (*total_link_count) = (*total_link_count) + 1;
+
+    //Returns a pointer to the newly created link
+    return new_link;
+
+}
+
 void print_artist(struct Artist* artist) {
     printf("Artist Name: '%s' {\n", artist->name);
     printf("\tid: %d\n", artist->id);
@@ -67,6 +85,29 @@ void print_song(struct Song* song) {
         printf("\tArtist: '%s'\n", song->artists[i]->name);
     }
     printf("}\n");
+}
+
+void save_to_file(char* output_filename, struct Artist** all_artists, int total_artist_count, struct Link** all_links, int total_link_count) {
+    //File manip
+    FILE* output_file = fopen(output_filename, "w");
+    fprintf(output_file, "graph ArtistTree{\n");
+
+    //Nodes
+    for (int i = 0; i < total_artist_count; i++) {
+        struct Artist* current_artist = all_artists[i];
+        fprintf(output_file, "\t%d[label=\"%s\"];\n", current_artist->id, current_artist->name);
+    }
+    //Edges
+    for (int i = 0; i < total_link_count; i++) {
+        struct Link* current_link = all_links[i];
+        int artist_one_id = current_link->artist_one->id;
+        int artist_two_id = current_link->artist_two->id;
+        fprintf(output_file, "\t%d -- %d [label=\"%s\"];\n",
+            artist_one_id, artist_two_id, current_link->song->song_name);
+    }
+    fprintf(output_file, "}");
+    //Close file to avoid leaks
+    fclose(output_file);
 }
 
 int main(void) {
@@ -91,26 +132,8 @@ int main(void) {
     temp_artist_list[2] = get_artist_index(all_artists, &total_artist_count, "De La Ghetto");
     create_song(all_artists, &total_song_count, all_songs, "Ya Es Hora", temp_artist_list, 3);
 
-    //File manip
-    FILE* output_file = fopen("ArtistTree.dot", "w");
-    fprintf(output_file, "graph ArtistTree{\n");
-
-    //Nodes
-    for (int i = 0; i < total_artist_count; i++) {
-        struct Artist* current_artist = all_artists[i];
-        fprintf(output_file, "\t%d[label=\"%s\"];\n", current_artist->id, current_artist->name);
-    }
-    //Edges
-    for (int i = 0; i < total_link_count; i++) {
-        struct Link* current_link = all_links[i];
-        int artist_one_id = current_link->artist_one->id;
-        int artist_two_id = current_link->artist_two->id;
-        fprintf(output_file, "\t%d -- %d [label=\"%s\"];\n",
-            artist_one_id, artist_two_id, current_link->song->song_name);
-    }
-    fprintf(output_file, "}");
-    //Close file to avoid leaks
-    fclose(output_file);
+    //Saves data to .dot file
+    save_to_file("ArtistTree.dot", all_artists, total_artist_count, all_links, total_link_count);
 
     //Free all memory
     for (int i = 0; i < total_link_count; i++) {
