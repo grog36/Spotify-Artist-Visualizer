@@ -54,13 +54,11 @@ struct Song* create_song(struct Globals* global_vars, char* name, int* artist_id
     return new_song;
 }
 
-struct Link* create_link(struct Globals* global_vars, char* first_artist_name, char* second_artist_name, struct Song* song) {
+struct Link* create_link(struct Globals* global_vars, struct Artist* first_artist, struct Artist* second_artist, struct Song* song) {
     //Creates the link and sets attributes
-    int first_artist_index = get_artist_index(global_vars, first_artist_name);
-    int second_artist_index = get_artist_index(global_vars, second_artist_name);
     struct Link* new_link = (struct Link*) malloc(sizeof(struct Link));
-    new_link->artist_one = global_vars->all_artists[first_artist_index];
-    new_link->artist_two = global_vars->all_artists[second_artist_index];
+    new_link->artist_one = first_artist;
+    new_link->artist_two = second_artist;
     new_link->song = song;
 
     //Update global variables
@@ -199,6 +197,19 @@ void read_from_file(char* input_filename, struct Globals* global_vars) {
     fclose(input_file);
 }
 
+void create_all_links(struct Globals* global_vars) {
+    for (int song_index = 0; song_index < global_vars->total_song_count; song_index++) {
+        struct Song* current_song = global_vars->all_songs[song_index];
+        for (int i = 0; i < current_song->artist_count; i++) {
+            struct Artist* artist_one = current_song->artists[i];
+            for (int j = (i + 1); j < current_song->artist_count; j++) {
+                struct Artist* artist_two = current_song->artists[j];
+                create_link(global_vars, artist_one, artist_two, current_song);
+            }
+        }
+    }
+}
+
 int main(void) {
     //Set global variables
     struct Globals global_variables;
@@ -211,6 +222,9 @@ int main(void) {
     
     //Reads data from input file
     read_from_file("songs.txt", &global_variables);
+
+    //Creates the links
+    create_all_links(&global_variables);
 
     //Saves data to .dot file
     save_to_file("ArtistTree.dot", &global_variables);
