@@ -20,10 +20,13 @@
 
 /** CONSTANTS */
 #define MAX_ARTIST_COUNT 100
+#define MAX_ARTIST_LENGTH 30
 #define MAX_ARTIST_PER_SONG 10
 #define MAX_LINK_COUNT 200
 #define MAX_LINK_PER_ARTIST 20
 #define MAX_SONG_COUNT 500
+#define MAX_SONG_LENGTH 50
+#define MAX_LINE_LENGTH 250
 
 
 /**
@@ -63,6 +66,15 @@ struct Song {
     char* song_name;
     struct Artist** artists;
     int artist_count;
+};
+
+struct Globals {
+    struct Artist** all_artists;
+    struct Link** all_links;
+    struct Song** all_songs;
+    int total_artist_count;
+    int total_song_count;
+    int total_link_count;
 };
 
 
