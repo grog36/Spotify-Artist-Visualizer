@@ -1,0 +1,7 @@
+#!/bin/bash
+gcc -Wall -c ./visualize.c;
+gcc -Wall driver.c visualize.o -o visualize;
+./visualize;
+echo "Creating png file: ";
+dot -Tpng -o ArtistTree.png ArtistTree.dot;
+echo "png file created!";

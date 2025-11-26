@@ -1,3 +1,0 @@
-#!/bin/bash
-
-dot -Tpng -o ArtistTree.png ArtistTree.dot

@@ -210,7 +210,7 @@ void create_all_links(struct Globals* global_vars) {
     }
 }
 
-int main(void) {
+void run_visualizer() {
     //Set global variables
     struct Globals global_variables;
     global_variables.all_artists = (struct Artist**) calloc(MAX_ARTIST_COUNT, sizeof(struct Artist*));

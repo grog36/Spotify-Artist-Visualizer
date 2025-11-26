@@ -1,3 +1,0 @@
-Create a program to make the .dot files
-Find a way to import song and artist names
-Add a global variable struct to hold all of the global vars
