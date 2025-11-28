@@ -91,6 +91,7 @@ struct Globals {
 /** FUNCTION PROTOTYPES */
 //Helper functions
 int get_artist_index(struct Globals* global_vars, char* name);
+int link_already_exists(struct Globals* global_vars, struct Artist* artist_one, struct Artist* artist_two);
 struct Artist* create_artist(struct Globals* global_vars, char* name);
 struct Song* create_song(struct Globals* global_vars, char* name, int* artist_ids, int num_of_artists);
 struct Link* create_link(struct Globals* global_vars, struct Artist* first_artist, struct Artist* second_artist, struct Song* song);

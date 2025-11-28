@@ -20,6 +20,19 @@ int get_artist_index(struct Globals* global_vars, char* name) {
     return -1;
 }
 
+int link_already_exists(struct Globals* global_vars, struct Artist* artist_one, struct Artist* artist_two) {
+    for (int i = 0; i < global_vars->total_link_count; i++) {
+        struct Link* current_link = global_vars->all_links[i];
+        if (current_link->artist_one == artist_one && current_link->artist_two == artist_two) {
+            return TRUE;
+        }
+        if (current_link->artist_one == artist_two && current_link->artist_two == artist_one) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 struct Artist* create_artist(struct Globals* global_vars, char* name) {
     //Creates an artist and assigns values
     struct Artist* new_artist = (struct Artist*) malloc(sizeof(struct Artist));
@@ -204,7 +217,9 @@ void create_all_links(struct Globals* global_vars) {
             struct Artist* artist_one = current_song->artists[i];
             for (int j = (i + 1); j < current_song->artist_count; j++) {
                 struct Artist* artist_two = current_song->artists[j];
-                create_link(global_vars, artist_one, artist_two, current_song);
+                if (!link_already_exists(global_vars, artist_one, artist_two)) {
+                    create_link(global_vars, artist_one, artist_two, current_song);
+                }
             }
         }
     }
@@ -221,7 +236,7 @@ void run_visualizer() {
     global_variables.total_link_count = 0;
     
     //Reads data from input file
-    read_from_file("songs.txt", &global_variables);
+    read_from_file("test.txt", &global_variables);
 
     //Creates the links
     create_all_links(&global_variables);
