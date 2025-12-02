@@ -19,12 +19,12 @@
 #define FALSE 0
 
 /** CONSTANTS */
-#define MAX_ARTIST_COUNT 250
-#define MAX_ARTIST_LENGTH 40
+#define MAX_ARTIST_COUNT 2000
+#define MAX_ARTIST_LENGTH 50
 #define MAX_ARTIST_PER_SONG 10
-#define MAX_LINK_COUNT 1000
-#define MAX_LINK_PER_ARTIST 15
-#define MAX_SONG_COUNT 500
+#define MAX_LINK_COUNT 2500
+#define MAX_LINK_PER_ARTIST 100
+#define MAX_SONG_COUNT 2000
 #define MAX_SONG_LENGTH 50
 #define MAX_LINE_LENGTH 250
 
@@ -102,6 +102,6 @@ void create_all_links(struct Globals* global_vars);
 //Actual functions
 void save_to_file(char* output_filename, struct Globals* global_vars);
 void read_from_file(char* input_filename, struct Globals* global_vars);
-void run_visualizer();
+void run_visualizer(char* input_filename, char* output_filename);
 
 #endif //End preprocessor directive to define macros

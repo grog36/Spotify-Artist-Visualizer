@@ -10,6 +10,12 @@
 //Include necessary header file
 #include "./visualize.h"
 
+/**
+* Gets the index for a requested artist in the list of all artists
+* @param global_vars : The global variables for the program
+* @param name : The name of the artist to get the index of
+* @return: Returns the index of the artist in global_vars->all_artists
+*/
 int get_artist_index(struct Globals* global_vars, char* name) {
     for (int i = 0; i < global_vars->total_artist_count; i++) {
         //TODO: Compare Names
@@ -20,6 +26,13 @@ int get_artist_index(struct Globals* global_vars, char* name) {
     return -1;
 }
 
+/**
+* Checks to see if a link between two artists already exists
+* @param global_vars : The global variables for the program
+* @param artist_one : One of the artists
+* @param artist_two : The other artist
+* @return: Returns TRUE(1) if a link between the two artists already exists, FALSE(0) if one does not exist
+*/
 int link_already_exists(struct Globals* global_vars, struct Artist* artist_one, struct Artist* artist_two) {
     for (int i = 0; i < global_vars->total_link_count; i++) {
         struct Link* current_link = global_vars->all_links[i];
@@ -33,6 +46,12 @@ int link_already_exists(struct Globals* global_vars, struct Artist* artist_one, 
     return FALSE;
 }
 
+/**
+* Creates an Artist struct for a given artist
+* @param global_vars : The global variables for the program
+* @param name : The name of the artist
+* @return: Returns a pointer to the created Artist struct
+*/
 struct Artist* create_artist(struct Globals* global_vars, char* name) {
     //Creates an artist and assigns values
     struct Artist* new_artist = (struct Artist*) malloc(sizeof(struct Artist));
@@ -49,6 +68,14 @@ struct Artist* create_artist(struct Globals* global_vars, char* name) {
     return new_artist;
 }
 
+/**
+* Creates a Song struct for a given song
+* @param global_vars : The global variables for the program
+* @param name : The name of the song
+* @param artist_ids : A list of the ids of the artists in the song
+* @param num_of_artists : The number of artists on the song (same as the number of artists in artist_ids)
+* @return: Returns a pointer to the created Song struct
+*/
 struct Song* create_song(struct Globals* global_vars, char* name, int* artist_ids, int num_of_artists) {
     //Creates the song and sets attributes
     struct Song* new_song = (struct Song*) malloc(sizeof(struct Song));
@@ -67,6 +94,14 @@ struct Song* create_song(struct Globals* global_vars, char* name, int* artist_id
     return new_song;
 }
 
+/**
+* Creates a Link struct for a given link between two artists
+* @param global_vars : The global variables for the program
+* @param first_artist : One of the artists on the link
+* @param second_artist : The other artist on the link
+* @param song : The song that links the two artists together
+* @return: Returns a pointer to the created Link struct
+*/
 struct Link* create_link(struct Globals* global_vars, struct Artist* first_artist, struct Artist* second_artist, struct Song* song) {
     //Creates the link and sets attributes
     struct Link* new_link = (struct Link*) malloc(sizeof(struct Link));
@@ -83,6 +118,10 @@ struct Link* create_link(struct Globals* global_vars, struct Artist* first_artis
 
 }
 
+/**
+* A helper function to print a given artist to stdout
+* @param artist : The artist to print to stdout
+*/
 void print_artist(struct Artist* artist) {
     printf("Artist Name: '%s' {\n", artist->name);
     printf("\tid: %d\n", artist->id);
@@ -90,6 +129,10 @@ void print_artist(struct Artist* artist) {
     printf("}\n");
 }
 
+/**
+* A helper function to print a given song to stdout
+* @param song : The song to print to stdout
+*/
 void print_song(struct Song* song) {
     printf("Song Name: '%s' {\n", song->song_name);
     for (int i = 0; i < song->artist_count; i++) {
@@ -98,6 +141,11 @@ void print_song(struct Song* song) {
     printf("}\n");
 }
 
+/**
+* Saves the artists and songs as nodes and edges to a .dot file
+* @param output_filename : The name of the (.dot) file to save the data to
+* @param global_vars : The global variables for the program
+*/
 void save_to_file(char* output_filename, struct Globals* global_vars) {
     //File manip
     FILE* output_file = fopen(output_filename, "w");
@@ -121,6 +169,10 @@ void save_to_file(char* output_filename, struct Globals* global_vars) {
     fclose(output_file);
 }
 
+/**
+* Frees all of the memory used for the visualization process
+* @param global_vars : The global variables for the program
+*/
 void free_all_memory(struct Globals* global_vars) {
     //Free all memory
     for (int i = 0; i < global_vars->total_link_count; i++) {
@@ -138,6 +190,11 @@ void free_all_memory(struct Globals* global_vars) {
     }
 }
 
+/**
+* Reads the data from a txt file following a specified format and saves the data in global vars
+* @param input_filename : The name of the file to read data from
+* @param global_vars : The global variables for the program
+*/
 void read_from_file(char* input_filename, struct Globals* global_vars) {
     FILE* input_file = fopen(input_filename, "r");
     if (input_file == NULL) {
@@ -210,6 +267,10 @@ void read_from_file(char* input_filename, struct Globals* global_vars) {
     fclose(input_file);
 }
 
+/**
+* A function to create the links to use as edges for the graph
+* @param global_vars : The global variables for the program
+*/
 void create_all_links(struct Globals* global_vars) {
     for (int song_index = 0; song_index < global_vars->total_song_count; song_index++) {
         struct Song* current_song = global_vars->all_songs[song_index];
@@ -225,7 +286,10 @@ void create_all_links(struct Globals* global_vars) {
     }
 }
 
-void run_visualizer() {
+/**
+* The entrypoint to the program.
+*/
+void run_visualizer(char* input_filename, char* output_filename) {
     //Set global variables
     struct Globals global_variables;
     global_variables.all_artists = (struct Artist**) calloc(MAX_ARTIST_COUNT, sizeof(struct Artist*));
@@ -236,13 +300,15 @@ void run_visualizer() {
     global_variables.total_link_count = 0;
     
     //Reads data from input file
-    read_from_file("test.txt", &global_variables);
+    read_from_file(input_filename, &global_variables);
+    
+    printf("DONE READING FROM FILE!\n");
 
     //Creates the links
     create_all_links(&global_variables);
 
     //Saves data to .dot file
-    save_to_file("ArtistTree.dot", &global_variables);
+    save_to_file(output_filename, &global_variables);
 
     free_all_memory(&global_variables);
 
