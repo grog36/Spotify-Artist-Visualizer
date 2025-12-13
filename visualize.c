@@ -9,6 +9,7 @@
 
 //Include necessary header file
 #include "./visualize.h"
+#include <string.h>
 
 /**
 * Gets the index for a requested artist in the list of all artists
@@ -24,6 +25,28 @@ int get_artist_index(struct Globals* global_vars, char* name) {
         }
     }
     return -1;
+}
+
+int check_for_uniqueness(int* set, int set_size, int new_num) {
+    for (int i = 0; i < set_size; i++) {
+        if (set[i] == new_num) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+struct Link* find_link(struct Globals* global_vars, struct Artist* artist_one, struct Artist* artist_two) {
+    for (int i = 0; i < global_vars->total_link_count; i++) {
+        struct Link* current_link = global_vars->all_links[i];
+        if (current_link->artist_one == artist_one && current_link->artist_two == artist_two) {
+            return current_link;
+        }
+        if (current_link->artist_two == artist_one && current_link->artist_one == artist_two) {
+            return current_link;
+        }
+    }
+    return NULL;
 }
 
 /**
@@ -107,7 +130,14 @@ struct Link* create_link(struct Globals* global_vars, struct Artist* first_artis
     struct Link* new_link = (struct Link*) malloc(sizeof(struct Link));
     new_link->artist_one = first_artist;
     new_link->artist_two = second_artist;
+    new_link->color = "black";
     new_link->song = song;
+
+    //Update artist's links
+    first_artist->links[first_artist->link_count] = new_link;
+    first_artist->link_count++;
+    second_artist->links[second_artist->link_count] = new_link;
+    second_artist->link_count++;
 
     //Update global variables
     global_vars->all_links[global_vars->total_link_count] = new_link;
@@ -142,6 +172,16 @@ void print_song(struct Song* song) {
 }
 
 /**
+* A helper function to print a given link to stdout
+* @param link : The link to print to stdout
+*/
+void print_link(struct Link* link) {
+    printf("Link: {\n\tSong: '%s'\n", link->song->song_name);
+    printf("\tArtist One: '%s'\n", link->artist_one->name);
+    printf("\tArtist Two: '%s'\n}\n", link->artist_two->name);
+}
+
+/**
 * Saves the artists and songs as nodes and edges to a .dot file
 * @param output_filename : The name of the (.dot) file to save the data to
 * @param global_vars : The global variables for the program
@@ -161,8 +201,8 @@ void save_to_file(char* output_filename, struct Globals* global_vars) {
         struct Link* current_link = global_vars->all_links[i];
         int artist_one_id = current_link->artist_one->id;
         int artist_two_id = current_link->artist_two->id;
-        fprintf(output_file, "\t%d -- %d [label=\"%s\"];\n",
-            artist_one_id, artist_two_id, current_link->song->song_name);
+        fprintf(output_file, "\t%d -- %d [label=\"%s\" color=\"%s\"];\n",
+            artist_one_id, artist_two_id, current_link->song->song_name, current_link->color);
     }
     fprintf(output_file, "}");
     //Close file to avoid leaks
@@ -286,6 +326,94 @@ void create_all_links(struct Globals* global_vars) {
     }
 }
 
+int breadth_first_search(struct Globals* global_vars, struct Artist* start_artist, char* end_artist) {
+    //Queue for the artists to check
+    struct Artist** queue = (struct Artist**) calloc(MAX_ARTIST_COUNT, sizeof(struct Artist*));
+    struct Artist** initial_queue_index = queue;
+    queue[0] = start_artist;
+    int queue_size = 1;
+    //Set containing artist ids that have already been checked
+    int* set = calloc(MAX_ARTIST_COUNT, sizeof(int));
+    set[0] = start_artist->id;
+    int set_size = 1;
+    //List containing the parent node for each artist whilst searching
+    int* parent = calloc(MAX_ARTIST_COUNT, sizeof(int));
+    
+    int PATH_FOUND = FALSE;
+    //Iterates over queue until a path is found
+    while (queue_size > 0 && PATH_FOUND == FALSE) {
+        //Pulls from front of queue
+        struct Artist* current_artist = queue[0];
+        queue++;
+        queue_size--;
+
+        //Iterates over edges
+        for (int i = 0; i < current_artist->link_count; i++) {
+            struct Link* current_link = current_artist->links[i];
+            struct Artist* artist_to_check;
+            
+            //Checks to see which artist isn't the current artist
+            if (current_link->artist_one == current_artist) {
+                artist_to_check = current_link->artist_two;
+            }
+            else {
+                artist_to_check = current_link->artist_one;
+            }
+
+            
+            //Makes sure we haven't already found a path before checking
+            if (PATH_FOUND == FALSE) {
+                if (strcmp(end_artist, artist_to_check->name) == 0) {
+                    printf("ARTIST FOUND!\n");
+                    PATH_FOUND = TRUE;
+                }
+                //Checks if it hasn't already been added to queue
+                if (check_for_uniqueness(set, set_size, artist_to_check->id)) {
+                    queue[queue_size] = artist_to_check;
+                    queue_size++;
+                    //Adds artist id to set
+                    set[set_size] = artist_to_check->id;
+                    set_size++;
+                    //Updates the parent node for the artist we are checking
+                    parent[artist_to_check->id] = current_artist->id;
+                }
+            }
+        }
+    }
+
+
+    if (PATH_FOUND) {
+        int end_artist_index = get_artist_index(global_vars, end_artist);
+        struct Artist* end_artist_parent = global_vars->all_artists[parent[end_artist_index]];
+
+        print_artist(end_artist_parent);
+        struct Artist* prev_artist = global_vars->all_artists[end_artist_index];
+        struct Artist* current_artist = global_vars->all_artists[parent[prev_artist->id]];
+
+        while (strcmp(start_artist->name, prev_artist->name) != 0) {
+            //Find the link and change the color
+            struct Link* link = find_link(global_vars, prev_artist, current_artist);
+            link->color = "red";
+
+            printf("Previous\n\t");
+            print_artist(prev_artist);
+            printf("Current\n\t");
+            print_artist(current_artist);
+            
+            //Update Artists
+            prev_artist = current_artist;
+            current_artist = global_vars->all_artists[parent[current_artist->id]];
+        }
+    }
+
+    //Frees the used memory
+    free(initial_queue_index);
+    free(set);
+    free(parent);
+
+    return PATH_FOUND;
+}
+
 /**
 * The entrypoint to the program.
 */
@@ -307,8 +435,12 @@ void run_visualizer(char* input_filename, char* output_filename) {
     //Creates the links
     create_all_links(&global_variables);
 
+    //Runs BFS
+    breadth_first_search(&global_variables, global_variables.all_artists[0], "Neton Vega");
+    
     //Saves data to .dot file
     save_to_file(output_filename, &global_variables);
+
 
     free_all_memory(&global_variables);
 

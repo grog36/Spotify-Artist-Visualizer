@@ -49,11 +49,13 @@ struct Artist {
 *
 * Artist* artist_one - One of the artists connected by the link
 * Artist* artist_two - The other artist connected by the link
+* char* color - The color to make the edge in the graph
 * Song* song - A reference to the song that creates the link
 */
 struct Link {
     struct Artist* artist_one;
     struct Artist* artist_two;
+    char* color;
     struct Song* song;
 };
 
