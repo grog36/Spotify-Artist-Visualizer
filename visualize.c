@@ -326,7 +326,14 @@ void create_all_links(struct Globals* global_vars) {
     }
 }
 
-int breadth_first_search(struct Globals* global_vars, struct Artist* start_artist, char* end_artist) {
+int breadth_first_search(struct Globals* global_vars, char* start_artist_name, char* end_artist) {
+    //Ensures the ending artist actually exists
+    int start_artist_index = get_artist_index(global_vars, start_artist_name);
+    if (start_artist_index == -1) {
+        return FALSE;
+    }
+    struct Artist* start_artist = global_vars->all_artists[start_artist_index];
+
     //Queue for the artists to check
     struct Artist** queue = (struct Artist**) calloc(MAX_ARTIST_COUNT, sizeof(struct Artist*));
     struct Artist** initial_queue_index = queue;
@@ -334,7 +341,7 @@ int breadth_first_search(struct Globals* global_vars, struct Artist* start_artis
     int queue_size = 1;
     //Set containing artist ids that have already been checked
     int* set = calloc(MAX_ARTIST_COUNT, sizeof(int));
-    set[0] = start_artist->id;
+    set[0] = start_artist_index;
     int set_size = 1;
     //List containing the parent node for each artist whilst searching
     int* parent = calloc(MAX_ARTIST_COUNT, sizeof(int));
@@ -381,12 +388,8 @@ int breadth_first_search(struct Globals* global_vars, struct Artist* start_artis
         }
     }
 
-
     if (PATH_FOUND) {
         int end_artist_index = get_artist_index(global_vars, end_artist);
-        struct Artist* end_artist_parent = global_vars->all_artists[parent[end_artist_index]];
-
-        print_artist(end_artist_parent);
         struct Artist* prev_artist = global_vars->all_artists[end_artist_index];
         struct Artist* current_artist = global_vars->all_artists[parent[prev_artist->id]];
 
@@ -394,11 +397,6 @@ int breadth_first_search(struct Globals* global_vars, struct Artist* start_artis
             //Find the link and change the color
             struct Link* link = find_link(global_vars, prev_artist, current_artist);
             link->color = "red";
-
-            printf("Previous\n\t");
-            print_artist(prev_artist);
-            printf("Current\n\t");
-            print_artist(current_artist);
             
             //Update Artists
             prev_artist = current_artist;
@@ -436,7 +434,7 @@ void run_visualizer(char* input_filename, char* output_filename) {
     create_all_links(&global_variables);
 
     //Runs BFS
-    breadth_first_search(&global_variables, global_variables.all_artists[0], "Neton Vega");
+    breadth_first_search(&global_variables, "A Boogie Wit da Hoodie", "Isabela Merced");
     
     //Saves data to .dot file
     save_to_file(output_filename, &global_variables);

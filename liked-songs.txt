@@ -987,7 +987,7 @@ Paint\Sol
 Pure Souls\Kanye West
 Mood Swings\Pop Smoke,Lil Tjay
 Hello\Pop Smoke,A Boogie Wit da Hoodie
-For The night\Pop Smoke,Lil Baby,DaBaby
+For The Night\Pop Smoke,Lil Baby,DaBaby
 What You Know Bout Love\Pop Smoke
 Mood\24kGoldn,iann dior
 Liar\Camila Cabello
@@ -1114,7 +1114,7 @@ Thug Love\A Boogie Wit da Hoodie
 Might Not Give Up\A Boogie Wit da Hoodie,Young Thug
 Me and My Guitar\A Boogie Wit da Hoodie
 Cinderella Story\A Boogie Wit da Hoodie
-Reply\A Boogie Wit Da Hoodie,Lil Uzi Vert
+Reply\A Boogie Wit da Hoodie,Lil Uzi Vert
 Now or Later\Dylan Matthew
 Not Alone\Abstract,RoZe
 idfc\blackbear
