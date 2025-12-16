@@ -1,7 +1,7 @@
 /**
 * Spotify Artist Visualization
 * @author Gregory Ecklund
-* @version November 10, 2025
+* @version December 16, 2025
 * This file contains the function definitions/implementations
 * necessary for the visualization process
 * @e : exit (1) - Invalid input file
@@ -10,6 +10,8 @@
 //Include necessary header file
 #include "./visualize.h"
 #include <string.h>
+
+//HELPER FUNCTIONS
 
 /**
 * Gets the index for a requested artist in the list of all artists
@@ -27,6 +29,15 @@ int get_artist_index(struct Globals* global_vars, char* name) {
     return -1;
 }
 
+/**
+* Checks to see if an integer is already in an array of integers
+* Assures uniqueness upon items in the set
+* @param int* set : The set to check
+* @param int set_size : The current number of elements in the set
+* @param int new_num : The number to check
+* @return: Returns TRUE(1) if the set does not contain the number,
+* otherwise returns FALSE(0) if the number is already in the set
+*/
 int check_for_uniqueness(int* set, int set_size, int new_num) {
     for (int i = 0; i < set_size; i++) {
         if (set[i] == new_num) {
@@ -36,6 +47,13 @@ int check_for_uniqueness(int* set, int set_size, int new_num) {
     return TRUE;
 }
 
+/**
+* Attempts to find a link within the global variables that contains the two artists
+* @param artist_one : One of the artists in the desired link
+* @param artist_two : The other artist in the desired link
+* @return: Returns a pointer to the link if a link can be found containing the two artists,
+* otherwise returns NULL
+*/
 struct Link* find_link(struct Globals* global_vars, struct Artist* artist_one, struct Artist* artist_two) {
     for (int i = 0; i < global_vars->total_link_count; i++) {
         struct Link* current_link = global_vars->all_links[i];
@@ -80,6 +98,7 @@ struct Artist* create_artist(struct Globals* global_vars, char* name) {
     struct Artist* new_artist = (struct Artist*) malloc(sizeof(struct Artist));
     new_artist->name = name;
     new_artist->id = global_vars->total_artist_count;
+    new_artist->fillcolor = DEFAULT_FILLCOLOR;
     new_artist->links = (struct Link**) calloc(MAX_LINK_PER_ARTIST, (sizeof(struct Link*)));
     new_artist->link_count = 0;
     
@@ -130,8 +149,11 @@ struct Link* create_link(struct Globals* global_vars, struct Artist* first_artis
     struct Link* new_link = (struct Link*) malloc(sizeof(struct Link));
     new_link->artist_one = first_artist;
     new_link->artist_two = second_artist;
-    new_link->color = "black";
+    new_link->color = DEFAULT_LINK_COLOR;
+    new_link->penwidth = DEFAULT_PENWIDTH;
     new_link->song = song;
+    new_link->songname_color = DEFAULT_SONGNAME_COLOR;
+    new_link->songname_fontsize = DEFAULT_SONGNAME_FONTSIZE;
 
     //Update artist's links
     first_artist->links[first_artist->link_count] = new_link;
@@ -155,6 +177,7 @@ struct Link* create_link(struct Globals* global_vars, struct Artist* first_artis
 void print_artist(struct Artist* artist) {
     printf("Artist Name: '%s' {\n", artist->name);
     printf("\tid: %d\n", artist->id);
+    printf("\tfill color: %s\n", artist->fillcolor);
     printf("\tlink count: %d\n", artist->link_count);
     printf("}\n");
 }
@@ -182,34 +205,6 @@ void print_link(struct Link* link) {
 }
 
 /**
-* Saves the artists and songs as nodes and edges to a .dot file
-* @param output_filename : The name of the (.dot) file to save the data to
-* @param global_vars : The global variables for the program
-*/
-void save_to_file(char* output_filename, struct Globals* global_vars) {
-    //File manip
-    FILE* output_file = fopen(output_filename, "w");
-    fprintf(output_file, "graph ArtistTree{\n");
-
-    //Nodes
-    for (int i = 0; i < global_vars->total_artist_count; i++) {
-        struct Artist* current_artist = global_vars->all_artists[i];
-        fprintf(output_file, "\t%d[label=\"%s\"];\n", current_artist->id, current_artist->name);
-    }
-    //Edges
-    for (int i = 0; i < global_vars->total_link_count; i++) {
-        struct Link* current_link = global_vars->all_links[i];
-        int artist_one_id = current_link->artist_one->id;
-        int artist_two_id = current_link->artist_two->id;
-        fprintf(output_file, "\t%d -- %d [label=\"%s\" color=\"%s\"];\n",
-            artist_one_id, artist_two_id, current_link->song->song_name, current_link->color);
-    }
-    fprintf(output_file, "}");
-    //Close file to avoid leaks
-    fclose(output_file);
-}
-
-/**
 * Frees all of the memory used for the visualization process
 * @param global_vars : The global variables for the program
 */
@@ -229,6 +224,27 @@ void free_all_memory(struct Globals* global_vars) {
         free(global_vars->all_artists[i]);
     }
 }
+
+/**
+* A function to create the links to use as edges for the graph
+* @param global_vars : The global variables for the program
+*/
+void create_all_links(struct Globals* global_vars) {
+    for (int song_index = 0; song_index < global_vars->total_song_count; song_index++) {
+        struct Song* current_song = global_vars->all_songs[song_index];
+        for (int i = 0; i < current_song->artist_count; i++) {
+            struct Artist* artist_one = current_song->artists[i];
+            for (int j = (i + 1); j < current_song->artist_count; j++) {
+                struct Artist* artist_two = current_song->artists[j];
+                if (!link_already_exists(global_vars, artist_one, artist_two)) {
+                    create_link(global_vars, artist_one, artist_two, current_song);
+                }
+            }
+        }
+    }
+}
+
+//MAIN FUNCTIONS
 
 /**
 * Reads the data from a txt file following a specified format and saves the data in global vars
@@ -308,25 +324,15 @@ void read_from_file(char* input_filename, struct Globals* global_vars) {
 }
 
 /**
-* A function to create the links to use as edges for the graph
+* Employs a Breadth-First Search (BFS) upon the graph to find the shortest path between
+* a starting artist and an ending artist
 * @param global_vars : The global variables for the program
+* @param start_artist_name : The name of the artist to start the search on
+* @param end_artist_name_ : The name of the artist to end the search at
+* @return: Returns TRUE(1) if a path was found between the start and ending artists,
+* otherwise returns FALSE(0) if no path could be made
 */
-void create_all_links(struct Globals* global_vars) {
-    for (int song_index = 0; song_index < global_vars->total_song_count; song_index++) {
-        struct Song* current_song = global_vars->all_songs[song_index];
-        for (int i = 0; i < current_song->artist_count; i++) {
-            struct Artist* artist_one = current_song->artists[i];
-            for (int j = (i + 1); j < current_song->artist_count; j++) {
-                struct Artist* artist_two = current_song->artists[j];
-                if (!link_already_exists(global_vars, artist_one, artist_two)) {
-                    create_link(global_vars, artist_one, artist_two, current_song);
-                }
-            }
-        }
-    }
-}
-
-int breadth_first_search(struct Globals* global_vars, char* start_artist_name, char* end_artist) {
+int breadth_first_search(struct Globals* global_vars, char* start_artist_name, char* end_artist_name) {
     //Ensures the ending artist actually exists
     int start_artist_index = get_artist_index(global_vars, start_artist_name);
     if (start_artist_index == -1) {
@@ -370,7 +376,7 @@ int breadth_first_search(struct Globals* global_vars, char* start_artist_name, c
             
             //Makes sure we haven't already found a path before checking
             if (PATH_FOUND == FALSE) {
-                if (strcmp(end_artist, artist_to_check->name) == 0) {
+                if (strcmp(end_artist_name, artist_to_check->name) == 0) {
                     printf("ARTIST FOUND!\n");
                     PATH_FOUND = TRUE;
                 }
@@ -389,19 +395,27 @@ int breadth_first_search(struct Globals* global_vars, char* start_artist_name, c
     }
 
     if (PATH_FOUND) {
-        int end_artist_index = get_artist_index(global_vars, end_artist);
-        struct Artist* prev_artist = global_vars->all_artists[end_artist_index];
+        int end_artist_name_index = get_artist_index(global_vars, end_artist_name);
+        struct Artist* prev_artist = global_vars->all_artists[end_artist_name_index];
         struct Artist* current_artist = global_vars->all_artists[parent[prev_artist->id]];
+        prev_artist->fillcolor = END_FILLCOLOR;
 
         while (strcmp(start_artist->name, prev_artist->name) != 0) {
-            //Find the link and change the color
+            //Find the link
             struct Link* link = find_link(global_vars, prev_artist, current_artist);
-            link->color = "red";
+
+            //Change visual attributes on the graph accordingly
+            link->color = CHAIN_FILLCOLOR;
+            link->penwidth = PATH_PENWIDTH;
+            link->songname_color = PATH_SONGNAME_COLOR;
+            link->songname_fontsize = PATH_SONGNAME_FONTSIZE;
+            current_artist->fillcolor = CHAIN_FILLCOLOR;
             
             //Update Artists
             prev_artist = current_artist;
             current_artist = global_vars->all_artists[parent[current_artist->id]];
         }
+        prev_artist->fillcolor = START_FILLCOLOR;
     }
 
     //Frees the used memory
@@ -410,6 +424,35 @@ int breadth_first_search(struct Globals* global_vars, char* start_artist_name, c
     free(parent);
 
     return PATH_FOUND;
+}
+
+/**
+* Saves the artists and songs as nodes and edges to a .dot file
+* @param output_filename : The name of the (.dot) file to save the data to
+* @param global_vars : The global variables for the program
+*/
+void save_to_file(char* output_filename, struct Globals* global_vars) {
+    //File manip
+    FILE* output_file = fopen(output_filename, "w");
+    fprintf(output_file, "graph ArtistTree{\n");
+
+    //Nodes
+    for (int i = 0; i < global_vars->total_artist_count; i++) {
+        struct Artist* current_artist = global_vars->all_artists[i];
+        fprintf(output_file, "\t%d[label=\"%s\" style=filled fillcolor=\"%s\"];\n", current_artist->id, current_artist->name, current_artist->fillcolor);
+    }
+    //Edges
+    for (int i = 0; i < global_vars->total_link_count; i++) {
+        struct Link* current_link = global_vars->all_links[i];
+        int artist_one_id = current_link->artist_one->id;
+        int artist_two_id = current_link->artist_two->id;
+        fprintf(output_file, "\t%d -- %d [label=\"%s\" fontcolor=\"%s\" fontsize=%d color=\"%s\" penwidth=%d];\n",
+            artist_one_id, artist_two_id, current_link->song->song_name, current_link->songname_color,
+            current_link->songname_fontsize, current_link->color, current_link->penwidth);
+    }
+    fprintf(output_file, "}");
+    //Close file to avoid leaks
+    fclose(output_file);
 }
 
 /**
@@ -434,7 +477,7 @@ void run_visualizer(char* input_filename, char* output_filename) {
     create_all_links(&global_variables);
 
     //Runs BFS
-    breadth_first_search(&global_variables, "A Boogie Wit da Hoodie", "Isabela Merced");
+    breadth_first_search(&global_variables, "Neton Vega", "Isabela Merced");
     
     //Saves data to .dot file
     save_to_file(output_filename, &global_variables);
