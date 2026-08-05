@@ -1,5 +1,5 @@
 #include "./visualize.h"
 
 int main(void) {
-    run_visualizer("songs.txt", "ArtistTree.dot");
+    run_visualizer("liked-songs.txt", "ArtistTree.dot");
 }

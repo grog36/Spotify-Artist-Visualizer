@@ -477,7 +477,7 @@ void run_visualizer(char* input_filename, char* output_filename) {
     create_all_links(&global_variables);
 
     //Runs BFS
-    breadth_first_search(&global_variables, "Neton Vega", "Isabela Merced");
+    breadth_first_search(&global_variables, "Pitbull", "Ariana Grande");
     
     //Saves data to .dot file
     save_to_file(output_filename, &global_variables);
